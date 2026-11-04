@@ -19,7 +19,7 @@ function renderCards(){
   const list=cards.filter(c=>(cat==='All'||c.category===cat)&&c.brand.toLowerCase().includes(q));
   $('cardGrid').innerHTML=list.map(c=>{
     const key=c.brand.toLowerCase(),logo=CARD_LOGOS[key],initials=c.brand.slice(0,2).toUpperCase();
-    const logoMarkup=key==='razer gold'?'<span class="razer-gold-wordmark">RAZER GOLD</span>':logo?`<img src="https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/${logo[0]}.svg" alt="${esc(c.brand)}">`:initials;
+    const logoMarkup=key==='razer gold'?'<span class="razer-gold-wordmark" style="font-weight:900;color:#00A651;font-size:18px">RAZER GOLD</span>':logo?`<img src="https://cdn.simpleicons.org/${logo[0]}/${logo[1]}" alt="${esc(c.brand)}" onerror="this.replaceWith(document.createTextNode('${esc(c.brand)}'))">`:initials;
     return `<article class="gift-card"><div class="card-logo">${logoMarkup}</div><h3>${esc(c.brand)}</h3><p>${esc(c.category)} · ${esc(c.region)}</p><div class="card-bottom"><span>${rates.some(r=>r.gift_card_id===c.id&&r.is_active&&Number(r.rate_ngn_per_unit)>0)?'Rates available':'Quote on review'}</span><button type="button" data-select-card="${c.id}">Sell</button></div></article>`;
   }).join('')||'<p>No gift cards found.</p>';
 }
