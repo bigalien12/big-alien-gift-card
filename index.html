@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>BIG ALIEN GIFT CARD 👽</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#" data-view="home"><span class="brand-mark">👽</span><span>BIG ALIEN <b>GIFT CARD</b></span></a>
+  <nav class="desktop-nav">
+    <a href="#cards" data-view="home">Gift cards</a>
+    <a href="#how" data-view="home">How it works</a>
+    <a href="#rates" data-view="rates">Rates</a>
+  </nav>
+  <div class="top-actions">
+    <button class="btn btn-ghost" id="accountBtn">My account</button>
+    <button class="btn btn-primary" id="tradeNavBtn">Trade now</button>
+  </div>
+</header>
+
+<main>
+  <section id="homeView" class="view active">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="pulse"></span> BUY • SELL • TRADE</span>
+        <h1>Your gift cards.<br>Your <span class="gradient-text">value.</span></h1>
+        <p>Trade popular gift cards through a clear, guided process. Check supported brands, estimate a quote and submit a trade request for review.</p>
+        <div class="hero-actions"><button class="btn btn-primary btn-large" data-view="trade">Start trading <span>→</span></button><button class="text-link" data-view="rates">View rates</button></div>
+        <div class="trust-row"><span>✓ Clear quotes</span><span>✓ Trade history</span><span>✓ Customer support</span></div>
+      </div>
+      <div class="hero-art">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="gift"><span class="gift-ribbon"></span><span class="gift-bow">✦</span><strong>BIG ALIEN</strong><small>GIFT CARD</small></div>
+        <div class="float-card float-one"><span class="mini-icon"></span><div><b>Apple</b><small>Gift Card</small></div></div>
+        <div class="float-card float-two"><span class="mini-icon steam">S</span><div><b>Steam</b><small>Wallet</small></div></div>
+        <div class="float-card float-three"><span class="mini-icon amazon">a</span><div><b>Amazon</b><small>Gift Card</small></div></div>
+      </div>
+    </section>
+    <section class="stats"><div><b>Popular brands</b><small>Explore supported cards</small></div><div><b>Transparent process</b><small>Request a quote first</small></div><div><b>Customer support</b><small>Help when you need it</small></div></section>
+    <section class="section" id="cards">
+      <div class="section-heading"><div><span class="eyebrow">EXPLORE BRANDS</span><h2>Choose your gift card</h2></div><input id="cardSearch" class="search" type="search" placeholder="Search gift cards..."></div>
+      <div class="category-row" id="categories"><button class="chip active" data-category="All">All cards</button><button class="chip" data-category="Gaming">Gaming</button><button class="chip" data-category="Shopping">Shopping</button><button class="chip" data-category="Entertainment">Entertainment</button><button class="chip" data-category="Lifestyle">Lifestyle</button></div>
+      <div class="card-grid" id="cardGrid"></div>
+      <p class="fine-print">Brand names are used only to identify card types. Trademarks belong to their respective owners.</p>
+    </section>
+    <section class="rate-band" id="rates"><div><span class="eyebrow">KNOW BEFORE YOU TRADE</span><h2>Estimate your gift card value.</h2><p>Rates are sample values for this prototype. Set verified rates in the admin system before accepting live trades.</p></div><button class="btn btn-primary" data-view="rates">Open rate calculator →</button></section>
+    <section class="section" id="how"><div class="section-heading"><div><span class="eyebrow">THE PROCESS</span><h2>How trading works</h2></div></div>
+      <div class="steps"><article><span>01</span><h3>Select a card</h3><p>Choose the brand, region and denomination.</p></article><article><span>02</span><h3>Get an estimate</h3><p>See an indicative quote and submit your trade request.</p></article><article><span>03</span><h3>Review and payout</h3><p>An authorised team member reviews the request and confirms the payout.</p></article></div>
+    </section>
+  </section>
+
+  <section id="authView" class="view narrow-view">
+    <div class="panel auth-panel">
+      <span class="eyebrow">BIG ALIEN ACCOUNT</span><h2 id="authTitle">Welcome back</h2><p id="authSubtitle" class="muted">Log in to view your gift card trades.</p>
+      <form id="authForm">
+        <label>Full name <input id="authName" autocomplete="name" placeholder="Your full name"></label>
+        <label>Email address <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+        <label>Password <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" required minlength="8"></label>
+        <button class="btn btn-primary full" id="authSubmit" type="submit">Log in</button>
+      </form>
+      <p class="muted small" id="authSwitchText">New here? <button class="inline-link" id="switchAuth">Create an account</button></p>
+      <p class="fine-print">Prototype only: connect Supabase Authentication before using real customer accounts. This demo does not store passwords.</p>
+    </div>
+  </section>
+
+  <section id="accountView" class="view section">
+    <div class="section-heading"><div><span class="eyebrow">CUSTOMER AREA</span><h2>My dashboard</h2><p class="muted" id="welcomeName"></p></div><button class="btn btn-ghost" id="logoutBtn">Log out</button></div>
+    <div class="dashboard-grid"><article class="panel"><span class="muted">My trade requests</span><strong class="metric" id="tradeCount">0</strong><small class="muted">Requests saved in this demo</small></article><article class="panel"><span class="muted">Pending review</span><strong class="metric" id="pendingCount">0</strong><small class="muted">Awaiting review</small></article></div>
+    <div class="panel table-panel"><h3>Trade history</h3><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Gift card</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+    <div class="panel payout-panel">
+      <span class="eyebrow">PAYOUT SETTINGS</span><h3>My withdrawal bank account</h3>
+      <p class="muted small">Add the Nigerian bank account where you want approved trade payouts sent. Secure saving becomes active after the Supabase backend is connected.</p>
+      <form id="bankForm">
+        <div class="form-row"><label>Bank name<select id="bankName" required><option value="">Select bank</option><option>Access Bank</option><option>Access Bank (Diamond)</option><option>Ecobank</option><option>Fidelity Bank</option><option>First Bank</option><option>FCMB</option><option>GTBank</option><option>Heritage Bank</option><option>Keystone Bank</option><option>Opay</option><option>Palmpay</option><option>Polaris Bank</option><option>Stanbic IBTC</option><option>Sterling Bank</option><option>UBA</option><option>Union Bank</option><option>Unity Bank</option><option>Wema Bank</option><option>Zenith Bank</option><option>Other</option></select></label><label>Account number<input id="bankAccountNumber" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit account number" required></label></div>
+        <label>Account name<input id="bankAccountName" placeholder="Name registered with your bank" required></label>
+        <button class="btn btn-primary" type="submit">Save withdrawal account</button>
+        <div id="bankMessage" class="form-message" role="status"></div>
+      </form>
+      <p class="fine-print">Do not enter your card PIN, online banking password or OTP. This static demo does not transmit or save bank details.</p>
+    </div>
+    <div class="dashboard-actions"><button class="btn btn-primary" data-view="trade">Start a new trade</button><a class="btn btn-ghost" id="whatsappAccount" href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp support</a></div>
+  </section>
+
+  <section id="ratesView" class="view narrow-view">
+    <div class="panel">
+      <span class="eyebrow">ESTIMATE ONLY</span><h2>Gift card rate calculator</h2><p class="muted">Select a sample rate and enter your card value. The estimate is not a guaranteed offer.</p>
+      <label>Gift card<select id="rateBrand"></select></label>
+      <label>Card region<select id="rateRegion"><option>United States</option><option>United Kingdom</option><option>Canada</option><option>Australia</option><option>Other</option></select></label>
+      <label>Card value (USD equivalent)<input id="rateAmount" type="number" min="1" placeholder="e.g. 100"></label>
+      <div class="estimate"><small>Indicative estimated payout</small><strong id="estimateValue">₦0</strong><small id="estimateHint">Enter a value to calculate.</small></div>
+      <button class="btn btn-primary full" data-view="trade">Continue to trade request</button>
+      <p class="fine-print">Sample rates are illustrative only. Replace them with verified, current rates before launch.</p>
+    </div>
+  </section>
+
+  <section id="tradeView" class="view narrow-view">
+    <div class="panel">
+      <span class="eyebrow">TRADE REQUEST</span><h2>Submit your gift card</h2><p class="muted">Send a request for review. Never put a gift card PIN, claim code, password or full redemption code in this form.</p>
+      <form id="tradeForm">
+        <label>Gift card brand<select id="tradeBrand" required></select></label>
+        <div class="form-row"><label>Card region<select id="tradeCountry" required><option value="">Choose region</option><option>United States</option><option>United Kingdom</option><option>Canada</option><option>Australia</option><option>Germany</option><option>Nigeria</option><option>Other</option></select></label><label>Card value<input id="tradeAmount" type="number" min="1" placeholder="e.g. 100" required></label></div>
+        <label>Currency<select id="tradeCurrency"><option>USD</option><option>GBP</option><option>EUR</option><option>CAD</option><option>AUD</option><option>NGN</option></select></label>
+        <label>Your name<input id="tradeName" required placeholder="Full name"></label>
+        <label>Email address<input id="tradeEmail" type="email" required placeholder="you@example.com"></label>
+        <label>Contact number<input id="tradeContact" required placeholder="Phone number with country code"></label>
+        <label>Additional details<textarea id="tradeNotes" rows="3" placeholder="Physical card or e-code, receipt availability, etc. Do not enter codes or PINs."></textarea></label>
+        <button class="btn btn-primary full" type="submit">Submit request →</button><div id="tradeMessage" class="form-message" role="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="adminView" class="view section">
+    <div class="section-heading"><div><span class="eyebrow">OWNER WORKSPACE</span><h2>Admin dashboard</h2><p class="muted">Only authenticated profiles with the admin role can use these controls.</p></div><button class="btn btn-ghost" id="adminExit">Back to store</button></div>
+    <div class="dashboard-grid"><article class="panel"><span class="muted">Trade requests</span><strong class="metric" id="adminTotal">0</strong></article><article class="panel"><span class="muted">Awaiting review</span><strong class="metric" id="adminPending">0</strong></article></div>
+    <div class="panel table-panel"><h3>Trade requests</h3><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Customer</th><th>Gift card</th><th>Value</th><th>Status</th><th>Update</th></tr></thead><tbody id="adminRows"></tbody></table></div></div>
+    <div class="panel table-panel"><h3>Gift cards and exchange rates</h3><form id="adminCardForm" class="admin-card-form">
+      <div class="form-row"><label>Brand<input id="newCardBrand" required placeholder="e.g. Apple"></label><label>Category<select id="newCardCategory"><option>Gaming</option><option>Shopping</option><option>Entertainment</option><option>Lifestyle</option><option>Other</option></select></label></div>
+      <div class="form-row"><label>Region<input id="newCardRegion" value="All" required></label><label>Rate (₦ per USD)<input id="newCardRate" type="number" min="0" step="0.01" required></label></div>
+      <button class="btn btn-primary" type="submit">Add gift card / rate</button><div id="adminCardMessage" class="form-message"></div>
+    </form><div class="table-wrap"><table><thead><tr><th>Brand</th><th>Region</th><th>Rate (₦)</th><th>Active</th><th>Action</th></tr></thead><tbody id="adminCardRows"></tbody></table></div></div>
+    <div class="panel table-panel"><h3>Withdrawal accounts</h3><p class="muted small">Private customer payout details. Use only to pay the matching verified customer.</p><div class="table-wrap"><table><thead><tr><th>Customer UID</th><th>Bank</th><th>Account name</th><th>Account number</th></tr></thead><tbody id="adminBankRows"></tbody></table></div></div>
+    <div class="panel table-panel"><h3>Payouts</h3><div class="table-wrap"><table><thead><tr><th>Trade</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminPayoutRows"></tbody></table></div></div>
+    <p class="fine-print">Payouts are manual bank transfers. Mark a payout Paid only after you have completed and verified the transfer in your banking app.</p>
+  </section>
+</main>
+
+<footer><a class="brand" href="#"><span class="brand-mark">👽</span><span>BIG ALIEN <b>GIFT CARD</b></span></a><span>© <span id="year"></span> Big Alien Gift Card</span><a href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp: 07025136166</a><button class="inline-link" data-view="admin">Admin demo</button></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
