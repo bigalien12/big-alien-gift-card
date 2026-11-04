@@ -62,24 +62,24 @@
         <button class="btn btn-primary full" id="authSubmit" type="submit">Log in</button>
       </form>
       <p class="muted small" id="authSwitchText">New here? <button class="inline-link" id="switchAuth">Create an account</button></p>
-      <p class="fine-print">Prototype only: connect Supabase Authentication before using real customer accounts. This demo does not store passwords.</p>
+      <p class="fine-print">Your account is protected by Supabase Authentication.</p>
     </div>
   </section>
 
   <section id="accountView" class="view section">
     <div class="section-heading"><div><span class="eyebrow">CUSTOMER AREA</span><h2>My dashboard</h2><p class="muted" id="welcomeName"></p></div><button class="btn btn-ghost" id="logoutBtn">Log out</button></div>
-    <div class="dashboard-grid"><article class="panel"><span class="muted">My trade requests</span><strong class="metric" id="tradeCount">0</strong><small class="muted">Requests saved in this demo</small></article><article class="panel"><span class="muted">Pending review</span><strong class="metric" id="pendingCount">0</strong><small class="muted">Awaiting review</small></article></div>
+    <div class="dashboard-grid"><article class="panel"><span class="muted">My trade requests</span><strong class="metric" id="tradeCount">0</strong><small class="muted">Requests saved to your account</small></article><article class="panel"><span class="muted">Pending review</span><strong class="metric" id="pendingCount">0</strong><small class="muted">Awaiting review</small></article></div>
     <div class="panel table-panel"><h3>Trade history</h3><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Gift card</th><th>Value</th><th>Status</th><th>Date</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
     <div class="panel payout-panel">
       <span class="eyebrow">PAYOUT SETTINGS</span><h3>My withdrawal bank account</h3>
-      <p class="muted small">Add the Nigerian bank account where you want approved trade payouts sent. Secure saving becomes active after the Supabase backend is connected.</p>
+      <p class="muted small">Add the Nigerian bank account where you want approved trade payouts sent. Your withdrawal account is saved privately to your account.</p>
       <form id="bankForm">
         <div class="form-row"><label>Bank name<select id="bankName" required><option value="">Select bank</option><option>Access Bank</option><option>Access Bank (Diamond)</option><option>Ecobank</option><option>Fidelity Bank</option><option>First Bank</option><option>FCMB</option><option>GTBank</option><option>Heritage Bank</option><option>Keystone Bank</option><option>Opay</option><option>Palmpay</option><option>Polaris Bank</option><option>Stanbic IBTC</option><option>Sterling Bank</option><option>UBA</option><option>Union Bank</option><option>Unity Bank</option><option>Wema Bank</option><option>Zenith Bank</option><option>Other</option></select></label><label>Account number<input id="bankAccountNumber" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit account number" required></label></div>
         <label>Account name<input id="bankAccountName" placeholder="Name registered with your bank" required></label>
         <button class="btn btn-primary" type="submit">Save withdrawal account</button>
         <div id="bankMessage" class="form-message" role="status"></div>
       </form>
-      <p class="fine-print">Do not enter your card PIN, online banking password or OTP. This static demo does not transmit or save bank details.</p>
+      <p class="fine-print">Never enter your card PIN, online banking password or OTP.</p>
     </div>
     <div class="dashboard-actions"><button class="btn btn-primary" data-view="trade">Start a new trade</button><a class="btn btn-ghost" id="whatsappAccount" href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp support</a></div>
   </section>
@@ -112,22 +112,10 @@
     </div>
   </section>
 
-  <section id="adminView" class="view section">
-    <div class="section-heading"><div><span class="eyebrow">OWNER WORKSPACE</span><h2>Admin dashboard</h2><p class="muted">Only authenticated profiles with the admin role can use these controls.</p></div><button class="btn btn-ghost" id="adminExit">Back to store</button></div>
-    <div class="dashboard-grid"><article class="panel"><span class="muted">Trade requests</span><strong class="metric" id="adminTotal">0</strong></article><article class="panel"><span class="muted">Awaiting review</span><strong class="metric" id="adminPending">0</strong></article></div>
-    <div class="panel table-panel"><h3>Trade requests</h3><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Customer</th><th>Gift card</th><th>Value</th><th>Status</th><th>Update</th></tr></thead><tbody id="adminRows"></tbody></table></div></div>
-    <div class="panel table-panel"><h3>Gift cards and exchange rates</h3><form id="adminCardForm" class="admin-card-form">
-      <div class="form-row"><label>Brand<input id="newCardBrand" required placeholder="e.g. Apple"></label><label>Category<select id="newCardCategory"><option>Gaming</option><option>Shopping</option><option>Entertainment</option><option>Lifestyle</option><option>Other</option></select></label></div>
-      <div class="form-row"><label>Region<input id="newCardRegion" value="All" required></label><label>Rate (₦ per USD)<input id="newCardRate" type="number" min="0" step="0.01" required></label></div>
-      <button class="btn btn-primary" type="submit">Add gift card / rate</button><div id="adminCardMessage" class="form-message"></div>
-    </form><div class="table-wrap"><table><thead><tr><th>Brand</th><th>Region</th><th>Rate (₦)</th><th>Active</th><th>Action</th></tr></thead><tbody id="adminCardRows"></tbody></table></div></div>
-    <div class="panel table-panel"><h3>Withdrawal accounts</h3><p class="muted small">Private customer payout details. Use only to pay the matching verified customer.</p><div class="table-wrap"><table><thead><tr><th>Customer UID</th><th>Bank</th><th>Account name</th><th>Account number</th></tr></thead><tbody id="adminBankRows"></tbody></table></div></div>
-    <div class="panel table-panel"><h3>Payouts</h3><div class="table-wrap"><table><thead><tr><th>Trade</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminPayoutRows"></tbody></table></div></div>
-    <p class="fine-print">Payouts are manual bank transfers. Mark a payout Paid only after you have completed and verified the transfer in your banking app.</p>
-  </section>
+
 </main>
 
-<footer><a class="brand" href="#"><span class="brand-mark">👽</span><span>BIG ALIEN <b>GIFT CARD</b></span></a><span>© <span id="year"></span> Big Alien Gift Card</span><a href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp: 07025136166</a><button class="inline-link" data-view="admin">Admin demo</button></footer>
+<footer><a class="brand" href="#"><span class="brand-mark">👽</span><span>BIG ALIEN <b>GIFT CARD</b></span></a><span>© <span id="year"></span> Big Alien Gift Card</span><a href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp: 07025136166</a></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
