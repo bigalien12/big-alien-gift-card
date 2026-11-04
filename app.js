@@ -388,7 +388,7 @@ async function loadMessages() {
     (data || [])
       .map(
         (m) =>
-          `<article class="message ${ m.sender_role === "customer" ? "mine" : "theirs" }"><small>${ m.sender_role === "admin" ? "BIG ALIEN Support" : m.sender_role === "assistant" ? "BIG ALIEN Assistant" : "You" } · ${new Date(m.created_at).toLocaleString()}</small><p>${esc( m.message )}</p></article>`
+          `<article class="message ${ m.sender_role === "customer" ? "mine" : "theirs" }"><small>${ m.sender_role === "admin" ? "BIG ALIEN Support" : "You" } · ${new Date(m.created_at).toLocaleString()}</small><p>${esc( m.message )}</p></article>`
       )
       .join("") ||
     '<p class="muted">No messages yet. Send us a message below.</p>';
@@ -396,43 +396,21 @@ async function loadMessages() {
 async function sendMessage(e) {
   e.preventDefault();
   const text = $("messageText").value.trim();
-  if (!text || !currentUser) return;
-  const sendButton = e.submitter;
-  if (sendButton) sendButton.disabled = true;
-  try {
-    const { data: savedMessage, error: saveError } = await db
-      .from("customer_messages")
-      .insert({
-        user_id: currentUser.id,
-        sender_role: "customer",
-        message: text,
-      })
-      .select("id")
-      .single();
-    if (saveError) throw saveError;
-    $("messageText").value = "";
-    msg("messageStatus", "Message sent. Getting an automatic reply...");
-    await loadMessages();
-    const { data: replyData, error: replyError } = await db.functions.invoke(
-      "big-alien-auto-support",
-      { body: { message_id: savedMessage.id } }
-    );
-    if (replyError || replyData?.error) {
-      console.error("Automatic support error:", replyError || replyData.error);
-      msg(
-        "messageStatus",
-        "Your message was sent, but automatic support could not reply just now. Our team can still respond.",
-        true
-      );
-    } else {
-      msg("messageStatus", "Automatic support replied.");
-    }
-    await loadMessages();
-  } catch (error) {
-    msg("messageStatus", error.message || "Could not send your message.", true);
-  } finally {
-    if (sendButton) sendButton.disabled = false;
+  if (!text) return;
+  const { error } = await db
+    .from("customer_messages")
+    .insert({
+      user_id: currentUser.id,
+      sender_role: "customer",
+      message: text,
+    });
+  if (error) {
+    msg("messageStatus", error.message, true);
+    return;
   }
+  $("messageText").value = "";
+  msg("messageStatus", "Message sent.");
+  await loadMessages();
 }
 async function authSubmit(e) {
   e.preventDefault();
@@ -564,4 +542,46 @@ async function init() {
   if (!db) {
     msg(
       "authMessage",
-      "
+      "Supabase configuration did not load. Check config.js.",
+      true
+    );
+    return;
+  }
+  try {
+    const {
+      data: { session },
+      error,
+    } = await db.auth.getSession();
+    if (error) throw error;
+    currentUser = session?.user || null;
+    if (currentUser) {
+      document.body.classList.add("logged-in");
+      $("accountBtn").textContent = "My account";
+    }
+    const [c, r] = await Promise.all([
+      db
+        .from("gift_cards")
+        .select("id,brand,category,region,rate_ngn_per_usd,is_active")
+        .eq("is_active", true)
+        .order("brand"),
+      db
+        .from("gift_card_rates")
+        .select(
+          "id,gift_card_id,currency,rate_ngn_per_unit,min_card_value,max_card_value,is_active"
+        )
+        .eq("is_active", true),
+    ]);
+    if (c.error) throw c.error;
+    if (r.error) throw r.error;
+    cards = c.data || [];
+    rates = r.data || [];
+    renderCards();
+    fillCards();
+    if (location.hash === "#trade" && !currentUser) showView("auth");
+  } catch (e) {
+    console.error(e);
+    $("cardGrid").textContent =
+      "Could not load gift cards or rates: " + e.message;
+  }
+}
+init();
