@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220">
+<rect width="600" height="220" rx="24" fill="#080808"/>
+<path d="M300 28 C285 58 293 82 276 105 C295 98 302 78 309 59 C316 87 311 103 328 116 C323 87 326 57 300 28Z" fill="#fff"/>
+<text x="300" y="174" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="67" font-weight="500" fill="#fff" letter-spacing="12">SEPHORA</text>
+</svg>
