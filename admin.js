@@ -108,10 +108,17 @@ async function refreshAll() {
   $("tradeOverdue").textContent = overdue.length;
   $("adminTradeRows").innerHTML =
     trades
-      .map(
-        (x) =>
-          `<tr><td>${esc(x.id.slice(0, 8))}</td><td>${esc( x.customer_name || x.user_id.slice(0, 8) )}<br>${esc(x.customer_contact || "")}</td><td>${esc( x.brand )}</td><td>${esc(x.card_value)} ${esc(x.currency)}</td><td>${new Date( x.submitted_at || x.created_at ).toLocaleString()}</td><td>${ x.deadline_at ? new Date(x.deadline_at).toLocaleString() : "—" }</td><td>${esc(x.status)}</td><td><select data-status="${x.id}">${[ "Pending review", "Under review", "Approved", "Rejected", "Paid", ] .map( (s) => `<option ${s === x.status ? "selected" : ""}>${s}</option>` ) .join("")}</select><input data-note="${ x.id }" placeholder="Admin note" value="${esc( x.admin_note || "" )}"><button data-save-trade="${ x.id }">Save</button></td><td><button data-images="${ x.id }">View pictures</button></td></tr>`
-      )
+      .map((x) => {
+        const displayStatus =
+          x.status === "Paid"
+            ? "Successful"
+            : x.status === "Rejected"
+            ? "Failed"
+            : x.status === "Approved"
+            ? "Under review"
+            : x.status;
+        return `<tr><td>${esc(x.id.slice(0, 8))}</td><td>${esc( x.customer_name || x.user_id.slice(0, 8) )}<br>${esc(x.customer_contact || "")}</td><td>${esc( x.brand )}</td><td>${esc(x.card_value)} ${esc(x.currency)}</td><td>${new Date( x.submitted_at || x.created_at ).toLocaleString()}</td><td>${ x.deadline_at ? new Date(x.deadline_at).toLocaleString() : "—" }</td><td>${esc(displayStatus)}</td><td><select data-status="${ x.id }">${["Pending review", "Under review", "Successful", "Failed"] .map( (s) => `<option value="${s}" ${ s === displayStatus ? "selected" : "" }>${s}</option>` ) .join("")}</select><input data-note="${ x.id }" placeholder="Failure reason (required if Failed) / admin note" value="${esc( x.admin_note || "" )}"><button data-save-trade="${ x.id }">Save status & note</button></td><td><button data-images="${ x.id }">View pictures</button></td></tr>`;
+      })
       .join("") || '<tr><td colspan="9">No trades yet.</td></tr>';
   $("rateCard").innerHTML =
     '<option value="">Choose card</option>' +
@@ -301,20 +308,21 @@ async function actions(e) {
       await refreshAll();
       return;
     }
-    if (status) {
-      const { error } = await db
-        .from("trade_requests")
-        .update({ status: status.value })
-        .eq("id", status.dataset.status);
-      if (error) throw error;
-      await refreshAll();
-    }
     if (save) {
       const id = save.dataset.saveTrade,
-        note = document.querySelector(`[data-note="${id}"]`).value;
+        note = document.querySelector(`[data-note="${id}"]`).value.trim(),
+        chosen = document.querySelector(`[data-status="${id}"]`).value;
+      let storedStatus =
+        chosen === "Successful"
+          ? "Paid"
+          : chosen === "Failed"
+          ? "Rejected"
+          : chosen;
+      if (chosen === "Failed" && !note)
+        throw new Error("Enter a reason explaining why this gift card failed.");
       const { error } = await db
         .from("trade_requests")
-        .update({ admin_note: note })
+        .update({ status: storedStatus, admin_note: note || null })
         .eq("id", id);
       if (error) throw error;
       await refreshAll();
@@ -392,7 +400,6 @@ async function boot() {
   $("adminRateForm").onsubmit = saveRate;
   $("refreshAdmin").onclick = () => refreshAll().catch((e) => alert(e.message));
   $("adminPanel").addEventListener("click", actions);
-  $("adminPanel").addEventListener("change", actions);
   $("adminLogout").onclick = async () => {
     await db.auth.signOut();
     showLogin();
