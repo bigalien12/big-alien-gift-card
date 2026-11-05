@@ -14,7 +14,28 @@
 #adminPanel .quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 #adminPanel .quick-grid>.panel{padding:18px}
 @media(max-width:760px){#adminPanel .admin-app-shell{grid-template-columns:1fr;gap:12px}#adminPanel .admin-sidebar{position:static;padding:10px}#adminPanel .admin-sidebar-label,#adminPanel .admin-sidebar-foot{display:none}#adminPanel #adminNavigation{display:flex;overflow-x:auto;gap:7px;padding-bottom:3px}#adminPanel .admin-nav-item{white-space:nowrap;flex:0 0 auto;padding:10px 12px;border:1px solid var(--line,#eadfd8)}#adminPanel .quick-grid{gap:7px}#adminPanel .quick-grid>.panel{padding:12px 9px;font-size:.82rem}}
-</style></head><body>
+</style>
+<style id="admin-fixed-frame">
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+#adminPanel .admin-app-shell{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:stretch;height:calc(100vh - 185px);min-height:460px;max-height:900px;overflow:hidden}
+#adminPanel .admin-sidebar{position:relative;top:auto;height:100%;overflow-y:auto;overscroll-behavior:contain}
+#adminPanel .admin-workspace{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scroll-behavior:auto;padding-right:4px}
+#adminPanel .admin-page-view{width:100%;max-width:100%;transform:none!important;zoom:1}
+#adminPanel .admin-page-heading{position:sticky;top:0;z-index:3;background:var(--background,#fff);padding:8px 0}
+#adminPanel .admin-nav-item{touch-action:manipulation;transform:none!important}
+#adminPanel input,#adminPanel select,#adminPanel textarea,#adminPanel button{font-size:16px}
+#adminPanel .table-wrap{max-width:100%;overflow:auto;overscroll-behavior:contain}
+@media(max-width:760px){
+ #adminPanel .admin-app-shell{display:flex;flex-direction:column;height:calc(100dvh - 190px);min-height:420px;max-height:none;gap:8px;overflow:hidden}
+ #adminPanel .admin-sidebar{flex:0 0 auto;width:100%;height:auto;overflow:hidden;padding:8px}
+ #adminPanel #adminNavigation{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;gap:6px;max-width:100%;scrollbar-width:thin;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+ #adminPanel .admin-nav-item{flex:0 0 auto;white-space:nowrap;padding:9px 12px;min-height:40px}
+ #adminPanel .admin-workspace{flex:1 1 auto;width:100%;height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 2px 12px}
+ #adminPanel .admin-page-heading{position:sticky;top:0}
+ #adminPanel .quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+</style>
+</head><body>
 <header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">👽</span><span>BIG ALIEN <b>ADMIN</b></span></a><div class="top-actions"><a class="btn btn-ghost" href="index.html">Customer website</a><button class="btn btn-ghost" id="adminLogout" hidden>Log out</button></div></header>
 <main class="section" style="max-width:1200px;margin:auto"><section id="adminLogin" class="narrow-view"><div class="panel auth-panel"><span class="eyebrow">RESTRICTED OWNER ACCESS</span><h2>Administrator sign in</h2><p class="muted">Sign in with the owner account assigned the admin role.</p><form id="adminLoginForm"><label>Email address<input id="adminEmail" type="email" required></label><label>Password<input id="adminPassword" type="password" required></label><button class="btn btn-primary full">Sign in to admin</button><p id="adminLoginMessage" class="form-message"></p></form></div></section>
 <section id="adminPanel" hidden><div class="section-heading"><div><span class="eyebrow">PRIVATE OWNER WORKSPACE</span><h1>Admin dashboard</h1><p id="adminWelcome" class="muted"></p></div><button class="btn btn-ghost" id="refreshAdmin">Refresh data</button></div>
