@@ -1,20 +1,407 @@
-const $=id=>document.getElementById(id),db=window.supabase?.createClient(window.BIG_ALIEN_SUPABASE_URL,window.BIG_ALIEN_SUPABASE_PUBLISHABLE_KEY);let adminUser=null,cards=[],trades=[];
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const money=n=>'₦'+Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
-function say(id,t,bad=false){if($(id)){$(id).textContent=t;$(id).style.color=bad?'#b42318':'#9a4b12';}}
-function showLogin(){$('adminLogin').hidden=false;$('adminPanel').hidden=true;$('adminLogout').hidden=true;}
-async function verifyAdmin(){if(!db)throw Error('Supabase configuration missing.');const {data:{session},error}=await db.auth.getSession();if(error)throw error;if(!session){showLogin();return false;}adminUser=session.user;const {data:p,error:pe}=await db.from('profiles').select('role,full_name').eq('id',adminUser.id).single();if(pe)throw pe;if(p.role!=='admin'){await db.auth.signOut();showLogin();say('adminLoginMessage','This account is not an administrator.',true);return false;}$('adminLogin').hidden=true;$('adminPanel').hidden=false;$('adminLogout').hidden=false;$('adminWelcome').textContent=`Signed in as ${p.full_name||adminUser.email} · Administrator`;await refreshAll();return true;}
-async function refreshAll(){const [t,c,r,b,p,m,w]=await Promise.all([db.from('trade_requests').select('*').order('created_at',{ascending:false}),db.from('gift_cards').select('id,brand,category,region,is_active').order('brand'),db.from('gift_card_rates').select('*').order('currency'),db.from('withdrawal_accounts').select('id,user_id,bank_name,account_name,account_number').order('created_at',{ascending:false}),db.from('payouts').select('id,trade_request_id,amount_ngn,status').order('created_at',{ascending:false}),db.from('customer_messages').select('*').order('created_at',{ascending:false}).limit(100),db.from('withdrawal_requests').select('*').order('created_at',{ascending:false})]);for(const x of [t,c,r,b,p,m,w])if(x.error)throw x.error;trades=t.data||[];cards=c.data||[];const rates=r.data||[];const overdue=trades.filter(x=>x.deadline_at&&new Date(x.deadline_at)<new Date()&&!['Paid','Rejected'].includes(x.status));$('tradeTotal').textContent=trades.length;$('tradePending').textContent=trades.filter(x=>x.status==='Pending review').length;$('tradeOverdue').textContent=overdue.length;
-$('adminTradeRows').innerHTML=trades.map(x=>`<tr><td>${esc(x.id.slice(0,8))}</td><td>${esc(x.customer_name||x.user_id.slice(0,8))}<br>${esc(x.customer_contact||'')}</td><td>${esc(x.brand)}</td><td>${esc(x.card_value)} ${esc(x.currency)}</td><td>${new Date(x.submitted_at||x.created_at).toLocaleString()}</td><td>${x.deadline_at?new Date(x.deadline_at).toLocaleString():'—'}</td><td>${esc(x.status)}</td><td><select data-status="${x.id}">${['Pending review','Under review','Approved','Rejected','Paid'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select><input data-note="${x.id}" placeholder="Admin note" value="${esc(x.admin_note||'')}"><button data-save-trade="${x.id}">Save</button></td><td><button data-images="${x.id}">View pictures</button></td></tr>`).join('')||'<tr><td colspan="9">No trades yet.</td></tr>';
-$('rateCard').innerHTML='<option value="">Choose card</option>'+cards.map(x=>`<option value="${x.id}">${esc(x.brand)}</option>`).join('');
-$('adminRateRows').innerHTML=rates.map(x=>{const card=cards.find(c=>c.id===x.gift_card_id);return `<tr><td>${esc(card?.brand||'Card')}</td><td>${esc(x.currency)}</td><td>${money(x.rate_ngn_per_unit)}</td><td>${esc(x.min_card_value)} – ${x.max_card_value==null?'No maximum':esc(x.max_card_value)}</td><td>${x.is_active?'Yes':'No'}</td><td><button data-rate-toggle="${x.id}" data-active="${x.is_active}">${x.is_active?'Disable':'Enable'}</button></td></tr>`}).join('')||'<tr><td colspan="6">No currency rates set yet.</td></tr>';
-$('adminBankRows').innerHTML=(b.data||[]).map(x=>`<tr><td>${esc(x.user_id.slice(0,8))}</td><td>${esc(x.bank_name)}</td><td>${esc(x.account_name)}</td><td>${esc(x.account_number)}</td></tr>`).join('')||'<tr><td colspan="4">No bank accounts.</td></tr>';
-$('adminWithdrawalRows').innerHTML=await Promise.all((w.data||[]).map(async x=>{const account=(b.data||[]).find(a=>a.id===x.withdrawal_account_id);let evidence=x.evidence_path?'Uploaded':'Not uploaded';if(x.evidence_path){const signed=await db.storage.from('withdrawal-evidence').createSignedUrl(x.evidence_path,300);if(signed.data?.signedUrl)evidence=`<a href="${esc(signed.data.signedUrl)}" target="_blank" rel="noopener">View image</a>`;}return `<tr><td>${esc(x.user_id.slice(0,8))}</td><td>${esc(account?.bank_name||'Bank unavailable')}<br>${esc(account?.account_name||'')}<br>${esc(account?.account_number||'')}</td><td>${money(x.amount_ngn)}</td><td>${new Date(x.created_at).toLocaleString()}</td><td><select data-withdrawal-status="${x.id}">${['Pending','Processing','Rejected','Paid'].map(status=>`<option ${status===x.status?'selected':''}>${status}</option>`).join('')}</select></td><td><input data-withdrawal-note="${x.id}" placeholder="Reason / admin note" value="${esc(x.admin_note||'')}"></td><td>${evidence}<br><input data-withdrawal-evidence="${x.id}" type="file" accept="image/jpeg,image/png,image/webp"></td><td><button data-save-withdrawal="${x.id}">Save update</button></td></tr>`; })).join('')||'<tr><td colspan="8">No withdrawal requests yet.</td></tr>';
-$('adminPayoutRows').innerHTML=(p.data||[]).map(x=>`<tr><td>${esc(x.trade_request_id.slice(0,8))}</td><td>${money(x.amount_ngn)}</td><td>${esc(x.status)}</td><td>${x.status==='Paid'?'Completed':`<button data-paid="${x.id}">Mark paid</button>`}</td></tr>`).join('')||'<tr><td colspan="4">No payouts recorded.</td></tr>';
-$('adminMessageRows').innerHTML=(m.data||[]).map(x=>`<tr><td>${esc(x.user_id.slice(0,8))}</td><td>${esc(x.message)}</td><td>${new Date(x.created_at).toLocaleString()}</td><td><input data-reply="${x.user_id}" placeholder="Write reply"><button data-send-reply="${x.user_id}">Send</button></td></tr>`).join('')||'<tr><td colspan="4">No customer messages.</td></tr>';
-$('compensationRows').innerHTML=overdue.map(x=>`<article class="panel"><b>${esc(x.brand)} · ${esc(x.card_value)} ${esc(x.currency)}</b><p>Order ${esc(x.id.slice(0,8))} · ${esc(x.customer_name||x.user_id.slice(0,8))}</p><p>Deadline passed. Compensation amount to review: ${money(x.compensation_amount_ngn||2000)}. Check trade validity and business terms before paying.</p></article>`).join('')||'<p class="muted">No overdue orders awaiting review.</p>';
+const $ = (id) => document.getElementById(id),
+  db = window.supabase?.createClient(
+    window.BIG_ALIEN_SUPABASE_URL,
+    window.BIG_ALIEN_SUPABASE_PUBLISHABLE_KEY
+  );
+let adminUser = null,
+  cards = [],
+  trades = [];
+const esc = (v) =>
+  String(v ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+        c
+      ])
+  );
+const money = (n) =>
+  "₦" +
+  Number(n || 0).toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+function say(id, t, bad = false) {
+  if ($(id)) {
+    $(id).textContent = t;
+    $(id).style.color = bad ? "#b42318" : "#9a4b12";
+  }
 }
-async function login(e){e.preventDefault();try{const {error}=await db.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});if(error)throw error;await verifyAdmin();}catch(e){say('adminLoginMessage',e.message,true);}}
-async function saveRate(e){e.preventDefault();const id=$('rateCard').value,currency=$('rateCurrency').value,rate=Number($('rateValue').value),min=Number($('rateMin').value||0),max=$('rateMax').value===''?null:Number($('rateMax').value);if(!id||!Number.isFinite(rate)||rate<=0||max!==null&&max<min)return say('rateMessage','Enter a valid card, positive rate and value range.',true);const {error}=await db.from('gift_card_rates').upsert({gift_card_id:id,currency,rate_ngn_per_unit:rate,min_card_value:min,max_card_value:max,is_active:true,updated_at:new Date().toISOString()},{onConflict:'gift_card_id,currency'});if(error)return say('rateMessage',error.message,true);say('rateMessage','Rate saved.');await refreshAll();}
-async function actions(e){const status=e.target.closest('[data-status]'),save=e.target.closest('[data-save-trade]'),img=e.target.closest('[data-images]'),toggle=e.target.closest('[data-rate-toggle]'),paid=e.target.closest('[data-paid]'),reply=e.target.closest('[data-send-reply]'),withdrawalSave=e.target.closest('[data-save-withdrawal]');try{if(withdrawalSave){const id=withdrawalSave.dataset.saveWithdrawal,selectedStatus=document.querySelector(`[data-withdrawal-status=\"${id}\"]`).value,note=document.querySelector(`[data-withdrawal-note=\"${id}\"]`).value.trim(),fileInput=document.querySelector(`[data-withdrawal-evidence=\"${id}\"]`),file=fileInput?.files?.[0],request=(await db.from('withdrawal_requests').select('id,user_id,status,evidence_path,paid_at').eq('id',id).single());if(request.error)throw request.error;if(request.data.status==='Paid'&&selectedStatus!=='Paid')throw new Error('A completed withdrawal cannot be changed to another status.');if(selectedStatus==='Rejected'&&!note)throw new Error('Enter a rejection reason before rejecting this request.');if(selectedStatus==='Paid'&&request.data.status!=='Paid'&&!confirm('Confirm the bank transfer has already been completed? Only mark Paid after the customer has actually received the transfer.'))return;let evidencePath=request.data.evidence_path||null;if(file){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024)throw new Error('Evidence must be JPG, PNG or WebP and no larger than 5 MB.');const ext=file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';evidencePath=`${request.data.user_id}/${id}/${crypto.randomUUID()}.${ext}`;const uploaded=await db.storage.from('withdrawal-evidence').upload(evidencePath,file,{contentType:file.type,upsert:false});if(uploaded.error)throw uploaded.error;}const update={status:selectedStatus,admin_note:note||null,evidence_path:evidencePath,updated_at:new Date().toISOString()};if(selectedStatus==='Paid')update.paid_at=request.data.paid_at||new Date().toISOString();else update.paid_at=null;const saved=await db.from('withdrawal_requests').update(update).eq('id',id);if(saved.error)throw saved.error;await refreshAll();return;}if(status){const {error}=await db.from('trade_requests').update({status:status.value}).eq('id',status.dataset.status);if(error)throw error;await refreshAll();}if(save){const id=save.dataset.saveTrade,note=document.querySelector(`[data-note="${id}"]`).value;const {error}=await db.from('trade_requests').update({admin_note:note}).eq('id',id);if(error)throw error;await refreshAll();}if(img){const id=img.dataset.images,{data,error}=await db.from('trade_card_images').select('object_path').eq('trade_request_id',id);if(error)throw error;const urls=[];for(const f of data||[]){const x=await db.storage.from('trade-card-images').createSignedUrl(f.object_path,300);if(x.data?.signedUrl)urls.push(x.data.signedUrl);}if(!urls.length){alert('No uploaded pictures found.');return;}const w=window.open('','_blank');if(w){w.document.write('<title>Trade pictures</title>'+urls.map(u=>`<img src="${u}" style="max-width:100%;display:block;margin:12px auto">`).join(''));w.document.close();}}if(toggle){const {error}=await db.from('gift_card_rates').update({is_active:toggle.dataset.active!=='true'}).eq('id',toggle.dataset.rateToggle);if(error)throw error;await refreshAll();}if(paid){if(!confirm('Confirm the bank transfer has already been completed?'))return;const {error}=await db.from('payouts').update({status:'Paid',paid_at:new Date().toISOString()}).eq('id',paid.dataset.paid);if(error)throw error;await refreshAll();}if(reply){const uid=reply.dataset.sendReply,text=document.querySelector(`[data-reply="${uid}"]`).value.trim();if(!text)return;const {error}=await db.from('customer_messages').insert({user_id:uid,sender_role:'admin',message:text});if(error)throw error;await refreshAll();}}catch(e){alert(e.message);}}
-async function boot(){if(!db){say('adminLoginMessage','Supabase config missing.',true);return;}$('adminLoginForm').onsubmit=login;$('adminRateForm').onsubmit=saveRate;$('refreshAdmin').onclick=()=>refreshAll().catch(e=>alert(e.message));$('adminPanel').addEventListener('click',actions);$('adminPanel').addEventListener('change',actions);$('adminLogout').onclick=async()=>{await db.auth.signOut();showLogin();};try{await verifyAdmin();}catch(e){showLogin();say('adminLoginMessage',e.message,true);}}
+function showLogin() {
+  $("adminLogin").hidden = false;
+  $("adminPanel").hidden = true;
+  $("adminLogout").hidden = true;
+}
+async function verifyAdmin() {
+  if (!db) throw Error("Supabase configuration missing.");
+  const {
+    data: { session },
+    error,
+  } = await db.auth.getSession();
+  if (error) throw error;
+  if (!session) {
+    showLogin();
+    return false;
+  }
+  adminUser = session.user;
+  const { data: p, error: pe } = await db
+    .from("profiles")
+    .select("role,full_name")
+    .eq("id", adminUser.id)
+    .single();
+  if (pe) throw pe;
+  if (p.role !== "admin") {
+    await db.auth.signOut();
+    showLogin();
+    say("adminLoginMessage", "This account is not an administrator.", true);
+    return false;
+  }
+  $("adminLogin").hidden = true;
+  $("adminPanel").hidden = false;
+  $("adminLogout").hidden = false;
+  $("adminWelcome").textContent = `Signed in as ${ p.full_name || adminUser.email } · Administrator`;
+  await refreshAll();
+  return true;
+}
+async function refreshAll() {
+  const [t, c, r, b, p, m, w] = await Promise.all([
+    db
+      .from("trade_requests")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    db
+      .from("gift_cards")
+      .select("id,brand,category,region,is_active")
+      .order("brand"),
+    db.from("gift_card_rates").select("*").order("currency"),
+    db
+      .from("withdrawal_accounts")
+      .select("id,user_id,bank_name,account_name,account_number")
+      .order("created_at", { ascending: false }),
+    db
+      .from("payouts")
+      .select("id,trade_request_id,amount_ngn,status")
+      .order("created_at", { ascending: false }),
+    db
+      .from("customer_messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    db
+      .from("withdrawal_requests")
+      .select("*")
+      .order("created_at", { ascending: false }),
+  ]);
+  for (const x of [t, c, r, b, p, m, w]) if (x.error) throw x.error;
+  trades = t.data || [];
+  cards = c.data || [];
+  const rates = r.data || [];
+  const overdue = trades.filter(
+    (x) =>
+      x.deadline_at &&
+      new Date(x.deadline_at) < new Date() &&
+      !["Paid", "Rejected"].includes(x.status)
+  );
+  $("tradeTotal").textContent = trades.length;
+  $("tradePending").textContent = trades.filter(
+    (x) => x.status === "Pending review"
+  ).length;
+  $("tradeOverdue").textContent = overdue.length;
+  $("adminTradeRows").innerHTML =
+    trades
+      .map(
+        (x) =>
+          `<tr><td>${esc(x.id.slice(0, 8))}</td><td>${esc( x.customer_name || x.user_id.slice(0, 8) )}<br>${esc(x.customer_contact || "")}</td><td>${esc( x.brand )}</td><td>${esc(x.card_value)} ${esc(x.currency)}</td><td>${new Date( x.submitted_at || x.created_at ).toLocaleString()}</td><td>${ x.deadline_at ? new Date(x.deadline_at).toLocaleString() : "—" }</td><td>${esc(x.status)}</td><td><select data-status="${x.id}">${[ "Pending review", "Under review", "Approved", "Rejected", "Paid", ] .map( (s) => `<option ${s === x.status ? "selected" : ""}>${s}</option>` ) .join("")}</select><input data-note="${ x.id }" placeholder="Admin note" value="${esc( x.admin_note || "" )}"><button data-save-trade="${ x.id }">Save</button></td><td><button data-images="${ x.id }">View pictures</button></td></tr>`
+      )
+      .join("") || '<tr><td colspan="9">No trades yet.</td></tr>';
+  $("rateCard").innerHTML =
+    '<option value="">Choose card</option>' +
+    cards
+      .map((x) => `<option value="${x.id}">${esc(x.brand)}</option>`)
+      .join("");
+  $("adminRateRows").innerHTML =
+    rates
+      .map((x) => {
+        const card = cards.find((c) => c.id === x.gift_card_id);
+        return `<tr><td>${esc(card?.brand || "Card")}</td><td>${esc( x.currency )}</td><td>${money(x.rate_ngn_per_unit)}</td><td>${esc( x.min_card_value )} – ${ x.max_card_value == null ? "No maximum" : esc(x.max_card_value) }</td><td>${ x.is_active ? "Yes" : "No" }</td><td><button data-rate-toggle="${x.id}" data-active="${ x.is_active }">${x.is_active ? "Disable" : "Enable"}</button></td></tr>`;
+      })
+      .join("") || '<tr><td colspan="6">No currency rates set yet.</td></tr>';
+  $("adminBankRows").innerHTML =
+    (b.data || [])
+      .map(
+        (x) =>
+          `<tr><td>${esc(x.user_id.slice(0, 8))}</td><td>${esc( x.bank_name )}</td><td>${esc(x.account_name)}</td><td>${esc( x.account_number )}</td></tr>`
+      )
+      .join("") || '<tr><td colspan="4">No bank accounts.</td></tr>';
+  $("adminWithdrawalRows").innerHTML =
+    (
+      await Promise.all(
+        (w.data || []).map(async (x) => {
+          const account = (b.data || []).find(
+            (a) => a.id === x.withdrawal_account_id
+          );
+          let evidence = x.evidence_path ? "Uploaded" : "Not uploaded";
+          if (x.evidence_path) {
+            const signed = await db.storage
+              .from("withdrawal-evidence")
+              .createSignedUrl(x.evidence_path, 300);
+            if (signed.data?.signedUrl)
+              evidence = `<a href="${esc( signed.data.signedUrl )}" target="_blank" rel="noopener">View image</a>`;
+          }
+          return `<tr><td>${esc(x.user_id.slice(0, 8))}</td><td>${esc( account?.bank_name || "Bank unavailable" )}<br>${esc(account?.account_name || "")}<br>${esc( account?.account_number || "" )}</td><td>${money(x.amount_ngn)}</td><td>${new Date( x.created_at ).toLocaleString()}</td><td><select data-withdrawal-status="${ x.id }">${["Pending", "Processing", "Rejected", "Paid"] .map( (status) => `<option ${ status === x.status ? "selected" : "" }>${status}</option>` ) .join("")}</select></td><td><input data-withdrawal-note="${ x.id }" placeholder="Reason / admin note" value="${esc( x.admin_note || "" )}"></td><td>${evidence}<br><input data-withdrawal-evidence="${ x.id }" type="file" accept="image/jpeg,image/png,image/webp"></td><td><button data-save-withdrawal="${ x.id }">Save update</button></td></tr>`;
+        })
+      )
+    ).join("") || '<tr><td colspan="8">No withdrawal requests yet.</td></tr>';
+  $("adminPayoutRows").innerHTML =
+    (p.data || [])
+      .map(
+        (x) =>
+          `<tr><td>${esc(x.trade_request_id.slice(0, 8))}</td><td>${money( x.amount_ngn )}</td><td>${esc(x.status)}</td><td>${ x.status === "Paid" ? "Completed" : `<button data-paid="${x.id}">Mark paid</button>` }</td></tr>`
+      )
+      .join("") || '<tr><td colspan="4">No payouts recorded.</td></tr>';
+  $("adminMessageRows").innerHTML =
+    (m.data || [])
+      .map(
+        (x) =>
+          `<tr><td>${esc(x.user_id.slice(0, 8))}</td><td>${esc( x.message )}</td><td>${new Date( x.created_at ).toLocaleString()}</td><td><input data-reply="${ x.user_id }" placeholder="Write reply"><button data-send-reply="${ x.user_id }">Send</button></td></tr>`
+      )
+      .join("") || '<tr><td colspan="4">No customer messages.</td></tr>';
+  $("compensationRows").innerHTML =
+    overdue
+      .map(
+        (x) =>
+          `<article class="panel"><b>${esc(x.brand)} · ${esc( x.card_value )} ${esc(x.currency)}</b><p>Order ${esc(x.id.slice(0, 8))} · ${esc( x.customer_name || x.user_id.slice(0, 8) )}</p><p>Deadline passed. Compensation amount to review: ${money( x.compensation_amount_ngn || 2000 )}. Check trade validity and business terms before paying.</p></article>`
+      )
+      .join("") || '<p class="muted">No overdue orders awaiting review.</p>';
+}
+async function login(e) {
+  e.preventDefault();
+  try {
+    const { error } = await db.auth.signInWithPassword({
+      email: $("adminEmail").value.trim(),
+      password: $("adminPassword").value,
+    });
+    if (error) throw error;
+    await verifyAdmin();
+  } catch (e) {
+    say("adminLoginMessage", e.message, true);
+  }
+}
+async function saveRate(e) {
+  e.preventDefault();
+  const id = $("rateCard").value,
+    currency = $("rateCurrency").value,
+    rate = Number($("rateValue").value),
+    min = Number($("rateMin").value || 0),
+    max = $("rateMax").value === "" ? null : Number($("rateMax").value);
+  if (!id || !Number.isFinite(rate) || rate <= 0 || (max !== null && max < min))
+    return say(
+      "rateMessage",
+      "Enter a valid card, positive rate and value range.",
+      true
+    );
+  const { error } = await db
+    .from("gift_card_rates")
+    .upsert(
+      {
+        gift_card_id: id,
+        currency,
+        rate_ngn_per_unit: rate,
+        min_card_value: min,
+        max_card_value: max,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "gift_card_id,currency" }
+    );
+  if (error) return say("rateMessage", error.message, true);
+  say("rateMessage", "Rate saved.");
+  await refreshAll();
+}
+async function actions(e) {
+  const status = e.target.closest("[data-status]"),
+    save = e.target.closest("[data-save-trade]"),
+    img = e.target.closest("[data-images]"),
+    toggle = e.target.closest("[data-rate-toggle]"),
+    paid = e.target.closest("[data-paid]"),
+    reply = e.target.closest("[data-send-reply]"),
+    withdrawalSave = e.target.closest("[data-save-withdrawal]");
+  try {
+    if (withdrawalSave) {
+      const id = withdrawalSave.dataset.saveWithdrawal,
+        selectedStatus = document.querySelector(
+          `[data-withdrawal-status=\"${id}\"]`
+        ).value,
+        note = document
+          .querySelector(`[data-withdrawal-note=\"${id}\"]`)
+          .value.trim(),
+        fileInput = document.querySelector(
+          `[data-withdrawal-evidence=\"${id}\"]`
+        ),
+        file = fileInput?.files?.[0],
+        request = await db
+          .from("withdrawal_requests")
+          .select("id,user_id,status,evidence_path,paid_at")
+          .eq("id", id)
+          .single();
+      if (request.error) throw request.error;
+      if (request.data.status === "Paid" && selectedStatus !== "Paid")
+        throw new Error(
+          "A completed withdrawal cannot be changed to another status."
+        );
+      if (selectedStatus === "Rejected" && !note)
+        throw new Error(
+          "Enter a rejection reason before rejecting this request."
+        );
+      if (
+        selectedStatus === "Paid" &&
+        request.data.status !== "Paid" &&
+        !confirm(
+          "Confirm the bank transfer has already been completed? Only mark Paid after the customer has actually received the transfer."
+        )
+      )
+        return;
+      let evidencePath = request.data.evidence_path || null;
+      if (file) {
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+          file.size > 5 * 1024 * 1024
+        )
+          throw new Error(
+            "Evidence must be JPG, PNG or WebP and no larger than 5 MB."
+          );
+        const ext =
+          file.name
+            .split(".")
+            .pop()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "") || "jpg";
+        evidencePath = `${ request.data.user_id }/${id}/${crypto.randomUUID()}.${ext}`;
+        const uploaded = await db.storage
+          .from("withdrawal-evidence")
+          .upload(evidencePath, file, {
+            contentType: file.type,
+            upsert: false,
+          });
+        if (uploaded.error) throw uploaded.error;
+      }
+      const update = {
+        status: selectedStatus,
+        admin_note: note || null,
+        evidence_path: evidencePath,
+        updated_at: new Date().toISOString(),
+      };
+      if (selectedStatus === "Paid")
+        update.paid_at = request.data.paid_at || new Date().toISOString();
+      else update.paid_at = null;
+      const saved = await db
+        .from("withdrawal_requests")
+        .update(update)
+        .eq("id", id);
+      if (saved.error) throw saved.error;
+      await refreshAll();
+      return;
+    }
+    if (status) {
+      const { error } = await db
+        .from("trade_requests")
+        .update({ status: status.value })
+        .eq("id", status.dataset.status);
+      if (error) throw error;
+      await refreshAll();
+    }
+    if (save) {
+      const id = save.dataset.saveTrade,
+        note = document.querySelector(`[data-note="${id}"]`).value;
+      const { error } = await db
+        .from("trade_requests")
+        .update({ admin_note: note })
+        .eq("id", id);
+      if (error) throw error;
+      await refreshAll();
+    }
+    if (img) {
+      const id = img.dataset.images,
+        { data, error } = await db
+          .from("trade_card_images")
+          .select("object_path")
+          .eq("trade_request_id", id);
+      if (error) throw error;
+      const urls = [];
+      for (const f of data || []) {
+        const x = await db.storage
+          .from("trade-card-images")
+          .createSignedUrl(f.object_path, 300);
+        if (x.data?.signedUrl) urls.push(x.data.signedUrl);
+      }
+      if (!urls.length) {
+        alert("No uploaded pictures found.");
+        return;
+      }
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.write(
+          "<title>Trade pictures</title>" +
+            urls
+              .map(
+                (u) =>
+                  `<img src="${u}" style="max-width:100%;display:block;margin:12px auto">`
+              )
+              .join("")
+        );
+        w.document.close();
+      }
+    }
+    if (toggle) {
+      const { error } = await db
+        .from("gift_card_rates")
+        .update({ is_active: toggle.dataset.active !== "true" })
+        .eq("id", toggle.dataset.rateToggle);
+      if (error) throw error;
+      await refreshAll();
+    }
+    if (paid) {
+      if (!confirm("Confirm the bank transfer has already been completed?"))
+        return;
+      const { error } = await db
+        .from("payouts")
+        .update({ status: "Paid", paid_at: new Date().toISOString() })
+        .eq("id", paid.dataset.paid);
+      if (error) throw error;
+      await refreshAll();
+    }
+    if (reply) {
+      const uid = reply.dataset.sendReply,
+        text = document.querySelector(`[data-reply="${uid}"]`).value.trim();
+      if (!text) return;
+      const { error } = await db
+        .from("customer_messages")
+        .insert({ user_id: uid, sender_role: "admin", message: text });
+      if (error) throw error;
+      await refreshAll();
+    }
+  } catch (e) {
+    alert(e.message);
+  }
+}
+async function boot() {
+  if (!db) {
+    say("adminLoginMessage", "Supabase config missing.", true);
+    return;
+  }
+  $("adminLoginForm").onsubmit = login;
+  $("adminRateForm").onsubmit = saveRate;
+  $("refreshAdmin").onclick = () => refreshAll().catch((e) => alert(e.message));
+  $("adminPanel").addEventListener("click", actions);
+  $("adminPanel").addEventListener("change", actions);
+  $("adminLogout").onclick = async () => {
+    await db.auth.signOut();
+    showLogin();
+  };
+  try {
+    await verifyAdmin();
+  } catch (e) {
+    showLogin();
+    say("adminLoginMessage", e.message, true);
+  }
+}
 boot();
