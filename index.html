@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#f47721"><title>BIG ALIEN GIFT CARD 👽</title>
+<meta name="theme-color" content="#f47721">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BIG ALIEN">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="big-alien-gift-card-logo.png">
+<link rel="icon" type="image/png" href="big-alien-gift-card-logo.png">
+<link rel="manifest" href="manifest.json">
+<title>BIG ALIEN GIFT CARD 👽</title>
 <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
@@ -14,7 +21,7 @@
     class="brand-logo"
   >
   </a>
-  <div class="top-actions"><button class="btn btn-ghost" id="accountBtn">Log in</button><button class="btn btn-primary" id="tradeNavBtn">Sell now</button></div>
+  <div class="top-actions"><button class="btn btn-ghost" id="installAppBtn" type="button" hidden>Install app</button><button class="btn btn-ghost" id="accountBtn">Log in</button><button class="btn btn-primary" id="tradeNavBtn">Sell now</button></div>
 </header>
 <main>
 <section id="homeView" class="view active">
@@ -75,5 +82,35 @@
 </main>
 <nav class="bottom-nav" id="bottomNav"><button data-view="home" class="active">⌂<small>Home</small></button><button data-view="message">✉<small>Message</small></button><button data-view="account">₦<small>Wallet</small></button><button data-view="order">▤<small>Order</small></button><button data-view="user">☻<small>User</small></button></nav>
 <footer><span>© <span id="year"></span> BIG ALIEN GIFT CARD 👽</span><a href="https://wa.me/2347025136166" target="_blank" rel="noopener">WhatsApp: 07025136166</a></footer>
+<script>
+// BIG ALIEN GIFT CARD app installation support
+let bigAlienInstallPrompt = null;
+const bigAlienInstallButton = document.getElementById('installAppBtn');
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  bigAlienInstallPrompt = event;
+  if (bigAlienInstallButton) bigAlienInstallButton.hidden = false;
+});
+if (bigAlienInstallButton) {
+  bigAlienInstallButton.addEventListener('click', async () => {
+    if (!bigAlienInstallPrompt) return;
+    bigAlienInstallPrompt.prompt();
+    await bigAlienInstallPrompt.userChoice;
+    bigAlienInstallPrompt = null;
+    bigAlienInstallButton.hidden = true;
+  });
+}
+window.addEventListener('appinstalled', () => {
+  if (bigAlienInstallButton) bigAlienInstallButton.hidden = true;
+  bigAlienInstallPrompt = null;
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch((error) => {
+      console.error('BIG ALIEN service worker registration failed:', error);
+    });
+  });
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script>
 </body></html>
