@@ -3,7 +3,7 @@ const CACHE_NAME = "big-alien-gift-card-v1";
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
-      cache.add("./")
+      cache.add("./index.html")
     )
   );
 
@@ -15,7 +15,7 @@ self.addEventListener("activate", event => {
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(key => key !== CACHE_NAME)
+          .filter(key => key.startsWith("big-alien-gift-card-") && key !== CACHE_NAME)
           .map(key => caches.delete(key))
       )
     )
