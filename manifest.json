@@ -1,0 +1,19 @@
+{
+  "name": "BIG ALIEN GIFT CARD",
+  "short_name": "BIG ALIEN",
+  "description": "Trade your gift cards with BIG ALIEN.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8f2",
+  "theme_color": "#f47721",
+  "icons": [
+    {
+      "src": "big-alien-gift-card-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
