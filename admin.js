@@ -513,3 +513,100 @@ async function actions(e) {
       if (!confirm("Confirm the bank transfer has already been completed?"))
         return;
       const { error }
+ = await db
+        .from("payouts")
+        .update({ status: "Paid", paid_at: new Date().toISOString() })
+        .eq("id", paid.dataset.paid);
+      if (error) throw error;
+      await refreshAll();
+    }
+    if (payoutEvidence) {
+      e.preventDefault();
+      const signed = await db.storage
+        .from("withdrawal-evidence")
+        .createSignedUrl(payoutEvidence.dataset.payoutEvidence, 300);
+      if (signed.error) throw signed.error;
+      if (signed.data?.signedUrl)
+        window.open(signed.data.signedUrl, "_blank", "noopener");
+    }
+    if (reply) {
+      const uid = reply.dataset.sendReply,
+        message = document.querySelector(`[data-reply="${uid}"]`).value.trim();
+      if (!message) return;
+      const { error } = await db.from("customer_messages").insert({
+        user_id: uid,
+        sender_role: "admin",
+        message,
+      });
+      if (error) throw error;
+      await refreshAll();
+    }
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+function showAdminPage(page) {
+  const panels = [...document.querySelectorAll("[data-admin-page-panel]")];
+  if (!panels.some((panel) => panel.dataset.adminPagePanel === page)) page = "overview";
+  panels.forEach((panel) => (panel.hidden = panel.dataset.adminPagePanel !== page));
+  document.querySelectorAll("[data-admin-page]").forEach((button) => {
+    const active = button.dataset.adminPage === page;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-current", active ? "page" : "false");
+  });
+  const heading = document.getElementById("adminPageTitle");
+  if (heading)
+    heading.textContent = ({
+      overview: "Overview",
+      trades: "Trade requests",
+      rates: "Currency rates",
+      brands: "Gift card brands",
+      messages: "Customer messages",
+      banks: "Customer bank accounts",
+      withdrawals: "Withdrawal requests",
+      payouts: "Payout records",
+      walletcredits: "Wallet credit records",
+      compensation: "Compensation review",
+    })[page] || "Overview";
+}
+
+function bindAdminNavigation() {
+  const nav = document.getElementById("adminNavigation");
+  if (nav && !nav.dataset.bound) {
+    nav.dataset.bound = "true";
+    nav.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-admin-page]");
+      if (button) {
+        event.preventDefault();
+        showAdminPage(button.dataset.adminPage);
+      }
+    });
+  }
+  showAdminPage("overview");
+}
+
+async function boot() {
+  if (!db) {
+    say("adminLoginMessage", "Supabase config missing.", true);
+    return;
+  }
+  $("adminLoginForm").onsubmit = login;
+  $("adminRateForm").onsubmit = saveRate;
+  $("adminBrandForm").onsubmit = saveBrand;
+  $("brandCancelButton").onclick = resetBrandForm;
+  $("refreshAdmin").onclick = () => refreshAll().catch((error) => alert(error.message));
+  $("adminPanel").addEventListener("click", actions);
+  $("adminLogout").onclick = async () => {
+    await db.auth.signOut();
+    showLogin();
+  };
+  try {
+    await verifyAdmin();
+    bindAdminNavigation();
+  } catch (error) {
+    showLogin();
+    say("adminLoginMessage", error.message, true);
+  }
+}
+boot();
