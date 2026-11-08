@@ -55,11 +55,11 @@ async function verifyAdmin() {
     say("adminLoginMessage", "This account is not an administrator.", true);
     return false;
   }
+  $("adminWelcome").textContent = `Signed in as ${ p.full_name || adminUser.email } · Administrator`;
+  await refreshAll();
   $("adminLogin").hidden = true;
   $("adminPanel").hidden = false;
   $("adminLogout").hidden = false;
-  $("adminWelcome").textContent = `Signed in as ${ p.full_name || adminUser.email } · Administrator`;
-  await refreshAll();
   return true;
 }
 async function refreshAll() {
@@ -204,15 +204,30 @@ async function refreshAll() {
 }
 async function login(e) {
   e.preventDefault();
+  const button = $("adminLoginForm").querySelector(
+    "button[type=submit],button:not([type])"
+  );
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Signing in…";
+  }
+  say("adminLoginMessage", "");
   try {
     const { error } = await db.auth.signInWithPassword({
       email: $("adminEmail").value.trim(),
       password: $("adminPassword").value,
     });
     if (error) throw error;
-    await verifyAdmin();
+    const ok = await verifyAdmin();
+    if (!ok) showLogin();
   } catch (e) {
-    say("adminLoginMessage", e.message, true);
+    showLogin();
+    say("adminLoginMessage", `Sign-in/dashboard error: ${e.message}`, true);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Sign in to admin";
+    }
   }
 }
 async function saveRate(e) {
@@ -497,16 +512,4 @@ async function actions(e) {
     if (paid) {
       if (!confirm("Confirm the bank transfer has already been completed?"))
         return;
-      const { error } = await db
-        .from("payouts")
-        .update({ status: "Paid", paid_at: new Date().toISOString() })
-        .eq("id", paid.dataset.paid);
-      if (error) throw error;
-      await refreshAll();
-    }
-    if (payoutEvidence) {
-      e.preventDefault();
-      const signed = await db.storage
-        .from("withdrawal-evidence")
-        .createSignedUrl(payoutEvidence.dataset.payoutEvidence, 300);
-      if (signed.
+      const { error }
